@@ -72,12 +72,6 @@ class DbHandler():
             self.close_connection()
 
 
-    def start_dialogue(user_one_id, user_two_id):
-        pass
-
-    def finish_dialogue(self, user_id):
-        pass
-
     def insert_dialogue(self, user_one_id, user_two_id, chat_two_id):
         pass
 
