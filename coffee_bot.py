@@ -1,9 +1,5 @@
 from telegram import Bot
 from telegram import Update
-#from telegram.ext import Dispatcher
-#from telegram.ext import MessageHandler
-#from telegram.ext import CommandHandler
-#from telegram.ext import Filters
 from db_handler import DbHandler
 from user_model import User
 from config import TG_TOKEN
@@ -13,12 +9,9 @@ class CoffeeBot():
     def __init__(self):
         self.bot = Bot(TG_TOKEN)
         self.db_handler = DbHandler()
-        #dispatcher = Dispatcher(bot, None, workers=0)
-        #dispatcher.add_handler(CommandHandler("help", help_command_handler))
 
 
     def process_update(self, update: Update):
-        #bot.bot.dispatcher.process_update(update)
         text = update.effective_message.text
         if text[0] == '/':
             if text == '/start':
@@ -51,30 +44,38 @@ class CoffeeBot():
                     '/search - Начать поиск собеседника\n' \
                     '/stop - Остановить поиск собеседника, закончить разговор\n' \
                     '/contact - Предложить собеседнику обмен контактами'
+        reply_text += '\n' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
         update.message.reply_text(reply_text)
 
 
     def process_search_command(self, update):
-        user_id = update.effective_user.id
-        chat_id = update.effective_chat.id
-        user = User(user_id, chat_id)
+        user = User.create_from_update(update)
         user_status = user.get_status()
         if user_status == "default":
-            reply_text = 'Начинаю поиск'
-            user.start_search()
+            searching_users_ids = self.db_handler.select_searching_users_ids()
+            if len(searching_users_ids) > 0:
+                for searching_user_id in searching_users_ids:
+                    if user.user_id != searching_user_id:
+                        companion = User.create_from_db_searching_table(searching_user_id)
+                        companion.stop_search()
+                        #user.start_dialogue(companion)
+                        reply_text = 'Собеседник найден. Для выхода из диалога введите команду /stop'
+                        self.bot.send_message(searching_user_id, reply_text)
+                        break
+            else:
+                reply_text = 'Начинаю поиск'
+                user.start_search()
         elif user_status == "searching":
             reply_text = 'Поиск уже идёт. Для остановки поиска введите команду /stop'
         elif user_status == "chatting":
             reply_text = 'Вы находитесь в чате с другим пользователем. Для выхода из чата введите команду /stop'
 
-        reply_text += ' ' + str(self.db_handler.select_searching_user())
+        reply_text += ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
         update.message.reply_text(reply_text)
 
 
     def process_stop_command(self, update):
-        user_id = update.effective_user.id
-        chat_id = update.effective_chat.id
-        user = User(user_id, chat_id)
+        user = User.create_from_update(update)
         user_status = user.get_status()
         if user_status == "default":
             reply_text = 'Поиск уже остановлен. Для начала нового поиска введите команду /search'
@@ -84,7 +85,7 @@ class CoffeeBot():
         elif user_status == "chatting":
             reply_text = 'Выхожу из чата *не реализованно*'
 
-        reply_text += ' ' + str(self.db_handler.select_searching_user())
+        reply_text += ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
         update.message.reply_text(reply_text)
 
 
@@ -101,14 +102,5 @@ class CoffeeBot():
     def send_message_to_admin(self, text):
         admin_chat_id = '353684540'
         self.bot.send_message(admin_chat_id, text)
-
-    #def process_echo_command(self, update):
-    #    #chat_id = update.effective_message.chat_id
-    #    user = update.effective_user
-    #    name = user.first_name if user else 'аноним'
-    #    text = update.effective_message.text
-    #    reply_text = f'Привет, {name}!\n\"{text}\"'
-    #    update.message.reply_text(reply_text)
-    #    #self.bot.send_message(chat_id, reply_text)
 
 
