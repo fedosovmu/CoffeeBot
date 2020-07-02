@@ -22,8 +22,8 @@ def prodaction_bot_webhook_receive_update():
 
 
 try:
-    from coffee_bot import CoffeeBot as TestCoffeeBot
-    from config import TG_TOKEN as TEST_TG_TOKEN
+    from test.coffee_bot import CoffeeBot as TestCoffeeBot
+    from test.config import TG_TOKEN as TEST_TG_TOKEN
 
     test_bot = TestCoffeeBot()
 

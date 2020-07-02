@@ -1,11 +1,17 @@
 from telegram import Bot
 from telegram import Update
-import os
-from db_handler import DbHandler
-from user_model import User
-from config import IS_PRODACTION
-from config import TG_TOKEN
-from config import ADMIN_CHAT_ID
+import app_mode
+if app_mode.is_prodaction(__file__):
+    from prodaction.db_handler import DbHandler
+    from prodaction.user_model import User
+    from prodaction.config import PRODACTION_TG_TOKEN as TG_TOKEN
+    from prodaction.config import ADMIN_CHAT_ID
+else:
+    from test.db_handler import DbHandler
+    from test.user_model import User
+    from test.config import TG_TOKEN
+    from test.config import ADMIN_CHAT_ID
+
 
 
 class CoffeeBot():
@@ -123,15 +129,10 @@ class CoffeeBot():
         user = User.create_from_update(update)
         if user.user_id == ADMIN_CHAT_ID:
             reply_text = 'admin info:'
-            if IS_PRODACTION:
-                is_prodaction_str = 'PRODACTION'
-            else:
-                is_prodaction_str = 'TEST'
-            reply_text += ' ' + is_prodaction_str
-            reply_text += ' ' + str(self.db_handler.select_searching_users_ids())
-            reply_text += ' ' + str(self.db_handler.select_chatting_users_ids())
-            reply_text += '\n' + os.getcwd()
-            reply_text += '\n' + __file__
+            reply_text += '\napp mode: ' + app_mode.get_app_mode(__file__).upper()
+            reply_text += '\nsearching users: ' + str(self.db_handler.select_searching_users_ids())
+            reply_text += '\nchatting users: ' + str(self.db_handler.select_chatting_users_ids())
+            reply_text += '\n/help /admin_info'
             self.send_message_to_admin(reply_text)
         else:
             self.process_unknown_command(update)

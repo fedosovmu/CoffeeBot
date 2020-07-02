@@ -1,5 +1,9 @@
-from db_handler import DbHandler
 from telegram import Update
+import app_mode
+if app_mode.is_prodaction(__file__):
+    from prodaction.db_handler import DbHandler
+else:
+    from test.db_handler import DbHandler
 
 
 class User:

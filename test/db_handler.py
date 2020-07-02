@@ -1,6 +1,10 @@
 import pymysql
 from pymysql.cursors import DictCursor
-import config
+import app_mode
+if app_mode.is_prodaction(__file__):
+    import prodaction.config as config
+else:
+    import test.config as config
 
 class DbHandler():
     def __init__(self):
