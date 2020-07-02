@@ -14,6 +14,7 @@ class CoffeeBot():
 
     def process_update(self, update: Update):
         text = update.effective_message.text
+        self.log_update(update)
         if text[0] == '/':
             if text == '/start':
                 self.process_start_command(update)
@@ -124,6 +125,13 @@ class CoffeeBot():
         else:
             self.process_unknown_command(update)
 
+
+    def log_update(self, update):
+        name = update.effective_user.first_name + ' ' + update.effective_user.last_name
+        user_id = update.effective_user.id
+        text = update.effective_message.text
+        log_message = 'PROCESS MESSAGE ("{}":"{}":"{}")'.format(name, user_id, text)
+        print(log_message)
 
 
     def send_message_to_admin(self, text):

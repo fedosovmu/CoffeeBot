@@ -17,12 +17,12 @@ class DbHandler():
             cursorclass=DictCursor
         )
         self.cursor = self.connection.cursor()
-        print('create connection')
+        #print('create connection')
 
 
     def close_connection(self):
         self.connection.close()
-        print('close connection')
+        #print('close connection')
 
 
     def select_searching_users_ids(self):
@@ -158,8 +158,9 @@ class DbHandler():
 
 
 if __name__ == '__main__':
+    pass
     # test db handler
-    db_handler = DbHandler()
+    #db_handler = DbHandler()
     #db_handler.insert_searching_user('001','002')
     #users = db_handler.select_searching_users_ids()
     #user_info = db_handler.select_searching_user(users[0])

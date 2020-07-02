@@ -59,8 +59,9 @@ class User:
 
 
 if __name__ == '__main__':
+    pass
     # test user model
-    db_handler = DbHandler()
+    #db_handler = DbHandler()
     #admin = User('353684540', '353684540')
     #admin = User.create_from_db_searching_table('353684540')
 
