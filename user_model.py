@@ -36,7 +36,10 @@ class User:
 
     def get_companion(self):
         user = self.db_handler.select_chatting_user(self.user_id)
-        return User(user["companion_user_id", "companion_chat_id"])
+        if user != None:
+            return User(user["companion_user_id"], user["companion_chat_id"])
+        else:
+            return None
 
 
     def start_search(self):
@@ -57,14 +60,34 @@ class User:
 
 if __name__ == '__main__':
     # test user model
+    db_handler = DbHandler()
     #admin = User('353684540', '353684540')
     #admin = User.create_from_db_searching_table('353684540')
+
     #user_1 = User('111', '110')
     #user_2 = User('222', '220')
     #user_1.start_dialogue(user_2)
 
-    #print(admin.user_id + ' ' + admin.chat_id)
-    pass
+    #db_handler.delete_chatting_users('111')
+
+    #chatting_users_ids = db_handler.select_chatting_users_ids()
+    #chatting_user = db_handler.select_chatting_user(chatting_users_ids[0])
+    #user_1 = User(chatting_user["user_id"], chatting_user["chat_id"])
+    #user_1.stop_dialogue()
+    #companion = user_1.get_companion()
+    #print(user_1.user_id, user_1.chat_id)
+    #print(companion.user_id, companion.chat_id)
+
+    #database_tables = str(db_handler.select_searching_users_ids()) + ' ' + str(db_handler.select_chatting_users_ids())
+    #print(database_tables)
+    #chatting_users_ids = db_handler.select_chatting_users_ids()
+    #for chatting_user_id in chatting_users_ids:
+    #    chatting_user = db_handler.select_chatting_user(chatting_user_id)
+    #    print(chatting_user)
+
+    #user_1 = User('111', '110')
+    #companion = user_1.get_companion()
+    #print(companion)
 
 
 

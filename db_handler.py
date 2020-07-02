@@ -134,10 +134,10 @@ class DbHandler():
                 	(user_id, chat_id, companion_user_id, companion_chat_id)
                 SELECT %s, %s, %s, %s
                 FROM DUAL
-                WHERE NOT EXISTS (SELECT 1 FROM chatting_user WHERE user_id = %s OR companion_user_id = %s)
+                WHERE NOT EXISTS (SELECT 1 FROM chatting_user WHERE user_id = %s)
             """
-            self.cursor.execute(query, (user_id, chat_id, companion_user_id, companion_chat_id, user_id, user_id))
-            self.cursor.execute(query, (companion_user_id, companion_chat_id, user_id, chat_id, companion_user_id, companion_user_id))
+            self.cursor.execute(query, (user_id, chat_id, companion_user_id, companion_chat_id, user_id))
+            self.cursor.execute(query, (companion_user_id, companion_chat_id, user_id, chat_id, companion_user_id))
             self.connection.commit()
         finally:
             self.close_connection()

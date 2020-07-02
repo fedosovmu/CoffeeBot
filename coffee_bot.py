@@ -3,6 +3,7 @@ from telegram import Update
 from db_handler import DbHandler
 from user_model import User
 from config import TG_TOKEN
+from config import ADMIN_CHAT_ID
 
 
 class CoffeeBot():
@@ -24,10 +25,12 @@ class CoffeeBot():
                 self.process_stop_command(update)
             elif text == '/contact':
                 self.process_contact_command(update)
+            elif text == '/admin_info':
+                self.process_admin_info_command(update)
             else:
                 self.process_unknown_command(update)
         else:
-            self.process_unknown_command(update)
+            self.process_message(update)
 
 
     def process_start_command(self, update):
@@ -44,7 +47,6 @@ class CoffeeBot():
                     '/search - Начать поиск собеседника\n' \
                     '/stop - Остановить поиск собеседника, закончить разговор\n' \
                     '/contact - Предложить собеседнику обмен контактами'
-        reply_text += '\n' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
         update.message.reply_text(reply_text)
 
 
@@ -58,34 +60,34 @@ class CoffeeBot():
                     if user.user_id != searching_user_id:
                         companion = User.create_from_db_searching_table(searching_user_id)
                         companion.stop_search()
-                        #user.start_dialogue(companion)
-                        reply_text = 'Собеседник найден. Для выхода из диалога введите команду /stop'
-                        self.bot.send_message(searching_user_id, reply_text)
+                        user.start_dialogue(companion)
+                        reply_text = 'Собеседник найден. Для выхода из чата введите команду /stop'
+                        self.bot.send_message(companion.user_id, reply_text)
                         break
             else:
-                reply_text = 'Начинаю поиск'
+                reply_text = 'Начинаю поиск... Для остановки поиска введите команду /stop'
                 user.start_search()
         elif user_status == "searching":
             reply_text = 'Поиск уже идёт. Для остановки поиска введите команду /stop'
         elif user_status == "chatting":
             reply_text = 'Вы находитесь в чате с другим пользователем. Для выхода из чата введите команду /stop'
-
-        reply_text += ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
         update.message.reply_text(reply_text)
 
 
     def process_stop_command(self, update):
         user = User.create_from_update(update)
         user_status = user.get_status()
-        if user_status == "default":
+        if user_status == 'default':
             reply_text = 'Поиск уже остановлен. Для начала нового поиска введите команду /search'
-        elif user_status == "searching":
-            reply_text = 'Останавливаю поиск'
+        elif user_status == 'searching':
+            reply_text = 'Поиск остановлен. Для начала нового поиска введите команду /search'
             user.stop_search()
-        elif user_status == "chatting":
-            reply_text = 'Выхожу из чата *не реализованно*'
-
-        reply_text += ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
+        elif user_status == 'chatting':
+            companion = user.get_companion()
+            user.stop_dialogue()
+            companion_reply_text = 'Ваш собеседник покинул чат. Для начала нового поиска введите команду /search'
+            self.bot.send_message(companion.user_id, companion_reply_text)
+            reply_text = 'Вы вышли из чата. Для начала нового поиска введите команду /search'
         update.message.reply_text(reply_text)
 
 
@@ -99,8 +101,32 @@ class CoffeeBot():
         update.message.reply_text(reply_text)
 
 
+    def process_message(self, update):
+        user = User.create_from_update(update)
+        companion = user.get_companion()
+        if companion != None:
+            companion_reply_text = 'Типичный дизайнер: ' + update.effective_message.text
+            self.bot.send_message(companion.user_id, companion_reply_text)
+        else:
+            user_status = user.get_status()
+            if user_status == 'default':
+                reply_text = 'Для просмотра доступных команд введите /help'
+            elif user_status == 'searching':
+                reply_text = 'В данный момент мы ищим вам собеседника. Для прекращения поиска введите /stop. Для просмотра доступных команд введите /help'
+            update.message.reply_text(reply_text)
+
+
+    def process_admin_info_command(self, update):
+        user = User.create_from_update(update)
+        if user.user_id == ADMIN_CHAT_ID:
+            reply_text = 'admin info: ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
+            self.send_message_to_admin(reply_text)
+        else:
+            self.process_unknown_command(update)
+
+
+
     def send_message_to_admin(self, text):
-        admin_chat_id = '353684540'
-        self.bot.send_message(admin_chat_id, text)
+        self.bot.send_message(ADMIN_CHAT_ID, text)
 
 
