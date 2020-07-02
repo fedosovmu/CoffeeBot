@@ -1,10 +1,10 @@
 from telegram import Bot
 from telegram import Update
-from db_handler import DbHandler
-from user_model import User
-from config import IS_PRODACTION
-from config import TG_TOKEN
-from config import ADMIN_CHAT_ID
+from prodaction.db_handler import DbHandler
+from prodaction.user_model import User
+from prodaction.config import IS_PRODACTION
+from prodaction.config import TG_TOKEN
+from prodaction.config import ADMIN_CHAT_ID
 
 
 class CoffeeBot():
@@ -121,7 +121,11 @@ class CoffeeBot():
     def process_admin_info_command(self, update):
         user = User.create_from_update(update)
         if user.user_id == ADMIN_CHAT_ID:
-            reply_text = 'admin info: ' + str(IS_PRODACTION) + ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
+            if IS_PRODACTION:
+                prodaction_str = 'PRODACTION'
+            else:
+                prodaction_str = 'TEST'
+            reply_text = 'admin info: ' + prodaction_str + ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
             self.send_message_to_admin(reply_text)
         else:
             self.process_unknown_command(update)
