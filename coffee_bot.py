@@ -1,5 +1,6 @@
 from telegram import Bot
 from telegram import Update
+import os
 from db_handler import DbHandler
 from user_model import User
 from config import IS_PRODACTION
@@ -121,7 +122,16 @@ class CoffeeBot():
     def process_admin_info_command(self, update):
         user = User.create_from_update(update)
         if user.user_id == ADMIN_CHAT_ID:
-            reply_text = 'admin info: ' + str(IS_PRODACTION) + ' ' + str(self.db_handler.select_searching_users_ids()) + ' ' + str(self.db_handler.select_chatting_users_ids())
+            reply_text = 'admin info:'
+            if IS_PRODACTION:
+                is_prodaction_str = 'PRODACTION'
+            else:
+                is_prodaction_str = 'TEST'
+            reply_text += ' ' + is_prodaction_str
+            reply_text += ' ' + str(self.db_handler.select_searching_users_ids())
+            reply_text += ' ' + str(self.db_handler.select_chatting_users_ids())
+            reply_text += '\n' + os.getcwd()
+            reply_text += '\n' + __file__
             self.send_message_to_admin(reply_text)
         else:
             self.process_unknown_command(update)
