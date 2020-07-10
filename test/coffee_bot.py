@@ -6,48 +6,51 @@ if app_mode.is_prodaction(__file__):
     from prodaction.user_model import User
     from prodaction.config import PRODACTION_TG_TOKEN as TG_TOKEN
     from prodaction.config import ADMIN_CHAT_ID
+    import prodaction.logger as logger
+    import prodaction.bot_messages  as bot_messages
 else:
     from test.db_handler import DbHandler
     from test.user_model import User
     from test.config import TG_TOKEN
     from test.config import ADMIN_CHAT_ID
-
+    import test.logger as logger
+    import test.bot_messages as bot_messages
 
 
 class CoffeeBot():
     def __init__(self):
         self.bot = Bot(TG_TOKEN)
         self.db_handler = DbHandler()
+        logger.log_text('BOT STARTED')
 
 
     def process_update(self, update: Update):
         text = update.effective_message.text
-        self.log_update(update)
-        if text[0] == '/':
-            if text == '/start':
-                self.process_start_command(update)
-            elif text == '/help':
-                self.process_help_command(update)
-            elif text == '/search':
-                self.process_search_command(update)
-            elif text == '/stop':
-                self.process_stop_command(update)
-            elif text == '/contact':
-                self.process_contact_command(update)
-            elif text == '/admin_info':
-                self.process_admin_info_command(update)
+        logger.log_update(update)
+        if text != None:
+            if text[0] == '/':
+                if text == '/start':
+                    self.process_start_command(update)
+                elif text == '/help':
+                    self.process_help_command(update)
+                elif text == '/search':
+                    self.process_search_command(update)
+                elif text == '/stop':
+                    self.process_stop_command(update)
+                elif text == '/contact':
+                    self.process_contact_command(update)
+                elif text == '/admin_info':
+                    self.process_admin_info_command(update)
+                else:
+                    self.process_unknown_command(update)
             else:
-                self.process_unknown_command(update)
+                self.process_message(update)
         else:
-            self.process_message(update)
+            self.process_data_message(update)
 
 
     def process_start_command(self, update):
-        reply_text = 'Привет, {}. Добро пожаловать в дизайн-кафе. ' \
-                     'Надеюсь ты хорошо проведешь время общаясь с другими посетителями. ' \
-                     'Для того чтобы начать поиск собеседника введи команду /search, ' \
-                     'для просмотра списка доступных команд введи команду /help' \
-                     ''.format(update.effective_user.first_name)
+        reply_text = bot_messages.start_message
         update.message.reply_text(reply_text)
 
 
@@ -114,7 +117,8 @@ class CoffeeBot():
         user = User.create_from_update(update)
         companion = user.get_companion()
         if companion != None:
-            companion_reply_text = 'Типичный дизайнер: ' + update.effective_message.text
+            text = update.effective_message.text
+            companion_reply_text = 'Собеседник: ' + text
             self.bot.send_message(companion.user_id, companion_reply_text)
         else:
             user_status = user.get_status()
@@ -125,6 +129,21 @@ class CoffeeBot():
             update.message.reply_text(reply_text)
 
 
+    def process_data_message(self, update):
+        user = User.create_from_update(update)
+        companion = user.get_companion()
+        if companion != None:
+            photo = update.effective_message.photo
+            if photo != None:
+                self.bot.send_photo(companion.user_id, photo)
+            else:
+                companion_reply_text = 'Типичный дизайнер: ' + str(update.effective_message)
+                self.bot.send_message(companion.user_id, companion_reply_text)
+        else:
+            reply_text = 'Для просмотра доступных команд введите /help'
+            update.message.reply_text(reply_text)
+
+
     def process_admin_info_command(self, update):
         user = User.create_from_update(update)
         if user.user_id == ADMIN_CHAT_ID:
@@ -132,21 +151,17 @@ class CoffeeBot():
             reply_text += '\napp mode: ' + app_mode.get_app_mode(__file__).upper()
             reply_text += '\nsearching users: ' + str(self.db_handler.select_searching_users_ids())
             reply_text += '\nchatting users: ' + str(self.db_handler.select_chatting_users_ids())
+            reply_text += '\n' + str(update.effective_message)
+            reply_text += ''
+            reply_text += ''
             reply_text += '\n/help /admin_info'
             self.send_message_to_admin(reply_text)
         else:
             self.process_unknown_command(update)
 
 
-    def log_update(self, update):
-        name = update.effective_user.first_name + ' ' + update.effective_user.last_name
-        user_id = update.effective_user.id
-        text = update.effective_message.text
-        log_message = 'PROCESS MESSAGE ("{}":"{}":"{}")'.format(name, user_id, text)
-        print(log_message)
-
-
     def send_message_to_admin(self, text):
+        logger.log_text('send message to admin')
         self.bot.send_message(ADMIN_CHAT_ID, text)
 
 
