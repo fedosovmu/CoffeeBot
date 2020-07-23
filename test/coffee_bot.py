@@ -50,6 +50,11 @@ class CoffeeBot():
 
 
     def process_start_command(self, update):
+        #markup = types.InlineKeyboardMarkup(row_width=2)
+        #item1 = types.InlineKeyboardButton("Хорошо", callback_data='good')
+        #item2 = types.InlineKeyboardButton("Не очень", callback_data='bad')
+        #markup.add(item1, item2)
+
         reply_text = bot_messages.start_message
         update.message.reply_text(reply_text)
 
