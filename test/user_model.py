@@ -27,6 +27,11 @@ class User:
         return User(user["user_id"], user["chat_id"])
 
 
+    @staticmethod
+    def create_from_id(user_id):
+        return User(user_id, user_id)
+
+
     def get_status(self):
         searching_users = self.db_handler.select_searching_users_ids()
         chatting_users = self.db_handler.select_chatting_users_ids()

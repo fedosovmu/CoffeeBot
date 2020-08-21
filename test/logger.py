@@ -10,12 +10,12 @@ def log_update(update: Update):
     user_id = update.effective_user.id
     text = update.effective_message.text
     if text != None:
-        log_message = '======= {} «PROCESS MESSAGE» ("{}":"{}":"{}")'.format(bot_type, name, user_id, text)
+        log_message = '======= {} «LOG UPDATE» ("{}":"{}") "{}"'.format(bot_type, name, user_id, text)
     else:
-        log_message = '======= {} «PROCESS MESSAGE» ("{}":"{}":"{}")'.format(bot_type, name, user_id, str(update))
+        log_message = '======= {} «LOG UPDATE» ("{}":"{}") (text == None) update_id: {}'.format(bot_type, name, user_id, str(update['update_id']))
     print(log_message)
 
 
-def log_text(text):
-    log_message = '======= {} «{}»'.format(bot_type, text)
+def log_text(text, text_detail = ''):
+    log_message = '======= {} «{}» {}'.format(bot_type, text, text_detail)
     print(log_message)

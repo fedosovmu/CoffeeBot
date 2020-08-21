@@ -21,32 +21,52 @@ class CoffeeBot():
     def __init__(self):
         self.bot = Bot(TG_TOKEN)
         self.db_handler = DbHandler()
-        logger.log_text('BOT STARTED')
+        logger.log_text('BOT STARTED', '=======')
+        self.debug_mode = False
+        self.echo_mode = False
 
 
     def process_update(self, update: Update):
-        text = update.effective_message.text
         logger.log_update(update)
+        text = update.effective_message.text
+        user = User.create_from_update(update)
+        is_admin = user.user_id == ADMIN_CHAT_ID
+        if self.debug_mode and is_admin:
+            update.message.reply_text(str(update) + '\n/debug_off')
+
         if text != None:
             if text[0] == '/':
                 if text == '/start':
                     self.process_start_command(update)
                 elif text == '/help':
-                    self.process_help_command(update)
+                    self.process_help_command(update, is_admin)
                 elif text == '/search':
                     self.process_search_command(update)
                 elif text == '/stop':
                     self.process_stop_command(update)
                 elif text == '/contact':
                     self.process_contact_command(update)
-                elif text == '/admin_info':
-                    self.process_admin_info_command(update)
+                elif is_admin:
+                    if text == '/admin_info':
+                        self.process_admin_info_command(update)
+                    elif text == '/test_button':
+                        self.process_test_button_command(update)
+                    elif text == '/debug_on':
+                        self.process_debug_on_command(update)
+                    elif text == '/debug_off':
+                        self.process_debug_off_command(update)
+                    elif text == '/echo_on':
+                        self.process_echo_on_command(update)
+                    elif text == '/echo_off':
+                        self.process_echo_off_command(update)
+                    else:
+                        self.process_unknown_command(update)
                 else:
                     self.process_unknown_command(update)
             else:
-                self.process_message(update)
+                self.process_message(update, is_admin)
         else:
-            self.process_data_message(update)
+            self.process_data_message(update, is_admin)
 
 
     def process_start_command(self, update):
@@ -54,16 +74,23 @@ class CoffeeBot():
         #item1 = types.InlineKeyboardButton("Хорошо", callback_data='good')
         #item2 = types.InlineKeyboardButton("Не очень", callback_data='bad')
         #markup.add(item1, item2)
-
         reply_text = bot_messages.start_message
         update.message.reply_text(reply_text)
 
 
-    def process_help_command(self, update):
+    def process_help_command(self, update, is_admin):
         reply_text ='/help - Показать список команд\n' \
                     '/search - Начать поиск собеседника\n' \
                     '/stop - Остановить поиск собеседника, закончить разговор\n' \
                     '/contact - Предложить собеседнику обмен контактами'
+        if is_admin:
+            reply_text += '\n====== ADMIN ONLY ======' \
+                          '\n/admin_info' \
+                          '\n/test_button' \
+                          '\n/debug_on' \
+                          '\n/debug_off' \
+                          '\n/echo_on' \
+                          '\n/echo_off'
         update.message.reply_text(reply_text)
 
 
@@ -118,9 +145,12 @@ class CoffeeBot():
         update.message.reply_text(reply_text)
 
 
-    def process_message(self, update):
+    def process_message(self, update, is_admin):
+        logger.log_text('PROCCESS MESSAGE')
         user = User.create_from_update(update)
         companion = user.get_companion()
+        if companion == None and self.echo_mode and is_admin:
+            companion = user.create_from_id(ADMIN_CHAT_ID)
         if companion != None:
             text = update.effective_message.text
             companion_reply_text = 'Собеседник: ' + text
@@ -134,35 +164,76 @@ class CoffeeBot():
             update.message.reply_text(reply_text)
 
 
-    def process_data_message(self, update):
+    def process_data_message(self, update, is_admin):
+        logger.log_text('PROCESS DATA MESSAGE')
         user = User.create_from_update(update)
         companion = user.get_companion()
+        if companion == None and self.echo_mode and is_admin:
+            companion = user.create_from_id(ADMIN_CHAT_ID)
         if companion != None:
-            photo = update.effective_message.photo
-            if photo != None:
-                self.bot.send_photo(companion.user_id, photo)
-            else:
-                companion_reply_text = 'Типичный дизайнер: ' + str(update.effective_message)
-                self.bot.send_message(companion.user_id, companion_reply_text)
+        #    photo = update.effective_message.photo
+        #    if photo != None:
+            logger.log_text('PROCESS DATA MESSAGE', 'send photo')
+            companion_reply_text = 'Собеседник: ' + '[Данные]'
+            self.bot.send_message(companion.user_id, companion_reply_text)
+        #    else:
+        #        logger.log_text('PROCESS DATA MESSAGE', 'cannot find photo')
         else:
             reply_text = 'Для просмотра доступных команд введите /help'
             update.message.reply_text(reply_text)
+        logger.log_text('PROCESS DATA MESSAGE', 'end process')
 
 
     def process_admin_info_command(self, update):
-        user = User.create_from_update(update)
-        if user.user_id == ADMIN_CHAT_ID:
-            reply_text = 'admin info:'
-            reply_text += '\napp mode: ' + app_mode.get_app_mode(__file__).upper()
-            reply_text += '\nsearching users: ' + str(self.db_handler.select_searching_users_ids())
-            reply_text += '\nchatting users: ' + str(self.db_handler.select_chatting_users_ids())
-            reply_text += '\n' + str(update.effective_message)
-            reply_text += ''
-            reply_text += ''
-            reply_text += '\n/help /admin_info'
-            self.send_message_to_admin(reply_text)
-        else:
-            self.process_unknown_command(update)
+        logger.log_text('PROCESS ADMIN INFO')
+        reply_text = 'admin info:'
+        reply_text += '\napp mode: ' + app_mode.get_app_mode(__file__).upper()
+        reply_text += '\ndebug mode: ' + str(self.debug_mode)
+        reply_text += '\necho mode: ' + str(self.echo_mode)
+        reply_text += '\nsearching users: ' + str(self.db_handler.select_searching_users_ids())
+        reply_text += '\nchatting users: ' + str(self.db_handler.select_chatting_users_ids())
+        #reply_text += '\n' + str(update.effective_message)
+        reply_text += ''
+        reply_text += ''
+        reply_text += '\n/help /admin_info'
+        #update.message.reply_text(reply_text)
+        self.send_message_to_admin(reply_text)
+        logger.log_text('PROCESS ADMIN INFO', 'end process')
+
+
+
+    def process_test_button_command(self, update):
+        reply_text = '[КНОПКА]'
+        update.message.reply_text(reply_text)
+
+        #markup = types.InlineKeyboardMarkup(row_width=2)
+        #item1 = types.InlineKeyboardButton("Хорошо", callback_data='good')
+        #item2 = types.InlineKeyboardButton("Не очень", callback_data='bad')
+        #markup.add(item1, item2)
+
+
+    def process_debug_on_command(self, update):
+        reply_text = '[Режим дебага включен] /debug_off'
+        self.debug_mode = True
+        update.message.reply_text(reply_text)
+
+
+    def process_debug_off_command(self, update):
+        reply_text = '[Режим дебага выключен]'
+        self.debug_mode = False
+        update.message.reply_text(reply_text)
+
+
+    def process_echo_on_command(self, update):
+        reply_text = '[Режим эхо включен] /echo_off'
+        self.echo_mode = True
+        update.message.reply_text(reply_text)
+
+
+    def process_echo_off_command(self, update):
+        reply_text = '[Режим эхо выключен]'
+        self.echo_mode = False
+        update.message.reply_text(reply_text)
 
 
     def send_message_to_admin(self, text):
