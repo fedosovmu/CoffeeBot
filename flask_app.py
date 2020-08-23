@@ -42,3 +42,23 @@ except:
     error_message = traceback.format_exc().split('\n')
     for line in error_message:
         print('======= ' + str(line))
+
+
+# TEST-2 BOT (NEW ARCHITECTURE)
+import requests
+TEST_2_TG_TOKEN = '1187004646:AAGDUdPDjkH9pVan0sQsXpdc6dxSgbc95hA'
+@app.route('/'+TEST_2_TG_TOKEN, methods=["GET", "POST"])
+def test_2_bot_webhook_receive_update():
+    print('======= TEST-2 BOT «RECIVE UPDATE» {}'.format(request.get_json()))
+    if request.method == "POST":
+        update_json = request.get_json()
+        chat_id = update_json['message']['chat']['id']
+        message_text = update_json['message']['text']
+        response = requests.get('https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}'.format(TEST_2_TG_TOKEN, chat_id, message_text))
+        print('======= TEST-2 BOT «SEND MESSAGE» ({}, "{}")'.format(chat_id, message_text))
+    return '{"ok": True}'
+
+
+
+
+
